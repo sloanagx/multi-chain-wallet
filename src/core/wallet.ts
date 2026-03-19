@@ -8,3 +8,11 @@ export function generateMnemonic(): string {
 export function validateMnemonic(mnemonic: string): boolean {
     return bip39.validateMnemonic(mnemonic);
 }
+
+export function importMnemonic(mnemonic: string): string {
+    if (!validateMnemonic(mnemonic)) {
+        throw new Error("Invalid mnemonic phrase");
+    }
+
+    return mnemonic.trim();
+}
