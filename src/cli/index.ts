@@ -2,7 +2,8 @@ import { Command } from "commander";
 import { generateMnemonic } from "../core/wallet";
 import { importMnemonic } from "../core/wallet";
 import { deriveEthereumWallet } from "../chains/ethereum/wallet";
-
+import { saveEncryptedWallet, loadEncryptedWallet } from "../storage/encrypted";
+import { deriveBitcoinWallet } from "../chains/bitcoin/wallet";
 
 const program = new Command();
 
@@ -73,6 +74,68 @@ program
       console.log(`Index: ${ethWallet.index}`);
       console.log(`Path: ${ethWallet.path}`);
       console.log(`Address: ${ethWallet.address}\n`);
+    } catch (err: any) {
+      console.error("\nError:", err.message);
+    }
+  });
+
+program
+  .command("save")
+  .description("Encrypt and save a wallet locally")
+  .argument("<mnemonic...>", "Seed phrase")
+  .requiredOption("-p, --password <password>", "Encryption password")
+  .action(async (mnemonicWords: string[], options: {password: string }) => {
+    const mnemonic = mnemonicWords.join(" ");
+
+    try {
+        const validMnemonic = importMnemonic(mnemonic);
+
+        await saveEncryptedWallet(validMnemonic, options.password);
+
+        console.log("\nWallet saved securely to .wallet/wallet.json\n");
+    }   catch (err: any) {
+        console.error("\nError:", err.message);
+    }
+  });
+
+  program
+  .command("load")
+  .description("Load wallet from encrypted storage")
+  .requiredOption("-p, --password <password>", "Decryption password")
+  .option("-i, --index <number>", "Account index", "0")
+  .action(async (options: { password: string; index: string }) => {
+    try {
+      const mnemonic = await loadEncryptedWallet(options.password);
+
+      const index = Number.parseInt(options.index, 10);
+      const ethWallet = deriveEthereumWallet(mnemonic, index);
+
+      console.log("\n=== LOADED WALLET ===\n");
+      console.log(`Index: ${ethWallet.index}`);
+      console.log(`Address: ${ethWallet.address}\n`);
+    } catch (err: any) {
+      console.error("\nError:", err.message);
+    }
+  });
+
+  program
+  .command("btc-address")
+  .description("Derive a Bitcoin address from a seed phrase")
+  .argument("<mnemonic...>", "Seed phrase")
+  .option("-i, --index <number>", "Account index", "0")
+  .action((mnemonicWords: string[], options: { index: string }) => {
+    const mnemonic = mnemonicWords.join(" ");
+
+    try {
+      const validMnemonic = importMnemonic(mnemonic);
+      const index = Number.parseInt(options.index, 10);
+
+      const btcWallet = deriveBitcoinWallet(validMnemonic, index);
+
+      console.log("\n=== BITCOIN ADDRESS ===\n");
+      console.log(`Index: ${btcWallet.index}`);
+      console.log(`Path: ${btcWallet.path}`);
+      console.log(`Address: ${btcWallet.address}\n`);
     } catch (err: any) {
       console.error("\nError:", err.message);
     }

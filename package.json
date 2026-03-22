@@ -30,9 +30,11 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.98.4",
+    "bip32": "^5.0.1",
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^7.0.1",
     "commander": "^14.0.3",
-    "ethers": "^6.16.0"
+    "ethers": "^6.16.0",
+    "tiny-secp256k1": "^2.2.4"
   }
 }
