@@ -4,7 +4,7 @@ import { importMnemonic } from "../core/wallet";
 import { deriveEthereumWallet } from "../chains/ethereum/wallet";
 import { saveEncryptedWallet, loadEncryptedWallet } from "../storage/encrypted";
 import { deriveBitcoinWallet } from "../chains/bitcoin/wallet";
-
+import { deriveSolanaWallet } from "../chains/solana/wallet";
 const program = new Command();
 
 program
@@ -140,5 +140,70 @@ program
       console.error("\nError:", err.message);
     }
   });
+
+  program
+  .command("sol-address")
+  .description("Derive a Solana address from a seed phrase")
+  .argument("<mnemonic...>", "Seed phrase")
+  .option("-i, --index <number>", "Account index", "0")
+  .action((mnemonicWords: string[], options: { index: string }) => {
+    const mnemonic = mnemonicWords.join(" ");
+
+    try {
+      const validMnemonic = importMnemonic(mnemonic);
+      const index = Number.parseInt(options.index, 10);
+
+      const solWallet = deriveSolanaWallet(validMnemonic, index);
+
+      console.log("\n=== SOLANA ADDRESS ===\n");
+      console.log(`Index: ${solWallet.index}`);
+      console.log(`Path: ${solWallet.path}`);
+      console.log(`Address: ${solWallet.address}\n`);
+    } catch (err: any) {
+      console.error("\nError:", err.message);
+    }
+  });
+
+  program
+  .command("derive")
+  .description("Derive an address for a specific chain")
+  .requiredOption("-c, --chain <chain>", "Chain: eth | btc | sol")
+  .option("-i, --index <number>", "Account index", "0")
+  .argument("<mnemonic...>", "Seed phrase")
+  .action(
+    (
+      mnemonicWords: string[],
+      options: { chain: string; index: string }
+    ) => {
+      const mnemonic = mnemonicWords.join(" ");
+
+      try {
+        const validMnemonic = importMnemonic(mnemonic);
+        const index = Number.parseInt(options.index, 10);
+
+        let result;
+
+        switch (options.chain) {
+          case "eth":
+            result = deriveEthereumWallet(validMnemonic, index);
+            break;
+          case "btc":
+            result = deriveBitcoinWallet(validMnemonic, index);
+            break;
+          case "sol":
+            result = deriveSolanaWallet(validMnemonic, index);
+            break;
+          default:
+            throw new Error("Unsupported chain. Use eth, btc, or sol.");
+        }
+
+        console.log(`\n=== ${options.chain.toUpperCase()} ADDRESS ===\n`);
+        console.log(`Index: ${result.index}`);
+        console.log(`Path: ${result.path}`);
+        console.log(`Address: ${result.address}\n`);
+      } catch (err: any) {
+        console.error("\nError:", err.message);
+      }
+    });
 program.parse(process.argv);
 
